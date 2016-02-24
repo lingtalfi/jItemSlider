@@ -11,9 +11,7 @@ jItemSlider can be installed as a [planet](https://github.com/lingtalfi/Observer
 
 
 
-![jquery item slider](http://s19.postimg.org/ittzbflcx/jitemslider.gif)
-
-
+![jquery item slider](https://raw.githubusercontent.com/lingtalfi/jItemSlider/master/doc/jitemslider.gif)
 
 
 Features
