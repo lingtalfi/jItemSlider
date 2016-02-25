@@ -14,6 +14,9 @@ jItemSlider can be installed as a [planet](https://github.com/lingtalfi/Observer
 ![jquery item slider](https://raw.githubusercontent.com/lingtalfi/jItemSlider/master/doc/jitemslider.gif)
 
 
+
+
+
 Features
 -----------
 
@@ -409,7 +412,19 @@ Options
      * 
      * See the infinite_slider_open_right example in the documentation demos.
      */
-    openingSide: 'both'
+    openingSide: 'both',
+    /**
+     * @param css - map
+     * css classes used by this plugin
+     */
+    css: {
+        item: "item",
+        prev: "prev",
+        next: "next",
+        extra: "extra",
+        main: "main",
+        invisible: "invisible"
+    }    
 }
 ```
 
@@ -430,6 +445,10 @@ Related
 
 History Log
 ------------------
+    
+- 1.1.0 -- 2016-02-25
+
+    - add options.css
     
 - 1.0.0 -- 2016-02-24
 
