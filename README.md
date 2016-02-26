@@ -446,6 +446,12 @@ Related
 History Log
 ------------------
     
+- 1.2.0 -- 2016-02-25
+
+    - reshape the code
+    - fix options.css undefined bug
+    
+        
 - 1.1.0 -- 2016-02-25
 
     - add options.css
