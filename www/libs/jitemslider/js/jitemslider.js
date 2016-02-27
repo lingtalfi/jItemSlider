@@ -40,6 +40,17 @@
              */
             items: [],
             /**
+             * @param itemsDetect - callback
+             * If you want to start with already drawn items, define this callback to convert
+             * those static items into items data.
+             *
+             * The callback has the following signature:
+             *
+             *          map:itemInfo        function ( jHandle:jItem )
+             *
+             */
+            itemsDetect: null,
+            /**
              * @param renderItemCb - callback that renders an item given the item info
              *
              *              str:itemHtml      function ( map:item )
@@ -150,6 +161,7 @@
             this.offset = 0;
             this.sliderOffset = 0;
             this.itemToCopyIndex = 0;
+            this.firstItemNotAligned = false;
             this.conf = $.extend(defaults, options);
 
             if (!this.conf.slider instanceof jQuery) {
@@ -193,18 +205,55 @@
                         }
                     }
 
+
+                    /**
+                     * Try to detect the situation where the first item wouldn't be aligned to the left
+                     * @conception first item looses leftmost position
+                     */
+                    var zeroItemIndex = 0;
+                    if (false === this.conf.infinite) {
+                        zeroItemIndex = this.getFirstVisibleZeroItemIndex();
+                        if (zeroItemIndex > 1) {
+                            this.firstItemNotAligned = true;
+                        }
+
+                    }
+
+
+                    var pageWidth = this.getPageWidth();
+                    var nbItemsPerPage = this.nbItemsPerPage();
+                    var nbItemsToRemove = null;
+
+
                     // append new items
-                    var firstOffset = this.getFirstItemOffset();
-                    var startOffset = firstOffset - 1;
-                    this.paintPrevSlice(startOffset);
+                    if (false === this.firstItemNotAligned) {
+                        var firstOffset = this.getFirstItemOffset();
+                        var startOffset = firstOffset - 1;
+                        this.paintPrevSlice(startOffset);
+                    }
+                    else {
+                        var nbItemsToAdd = nbItemsPerPage + 1 - zeroItemIndex;
+                        this.paintPrevSliceFiniteFix(nbItemsToAdd);
+                        pageWidth = (pageWidth / nbItemsPerPage) * nbItemsToAdd;
+                        var nbItemsTotal = this.jSliderContent.find('> .' + this.conf.css.item).length;
+                        nbItemsToRemove = nbItemsTotal - (2 * nbItemsPerPage + 2);
+                        if (nbItemsToRemove < 0) {
+                            nbItemsToRemove = 0;
+                        }
+                        if (nbItemsToRemove > nbItemsPerPage) {
+                            nbItemsToRemove = nbItemsPerPage;
+                        }
+                    }
+
 
                     // fix position
-                    this.offset -= this.getPageWidth();
+                    this.offset -= pageWidth;
                     this.repositionSlider(this.offset);
 
                     // remove obsolete (rightmost) items
-                    this.cutRight();
+                    this.cutRight(nbItemsToRemove);
 
+                    this.firstItemNotAligned = false;
 
                     // rename items
                     this.renameItems();
@@ -216,7 +265,7 @@
                     }
 
                     // slide
-                    this.sliderOffset += this.getPageWidth();
+                    this.sliderOffset += pageWidth;
                     this.moveSlider(this.sliderOffset);
 
 
@@ -296,6 +345,8 @@
             initSlider: function (theInst) {
 
                 var zis = this;
+
+
                 this.initialPaint();
 
 
@@ -303,10 +354,10 @@
 
                     // fix case where slider items have been re-sized due to responsive css rules
                     var curNbItemsPerPage = zis.nbItemsPerPage();
-                    if (this.lastNumberOfItemsPerPage !== curNbItemsPerPage) {
-                        zis.reforge(this.lastNumberOfItemsPerPage, curNbItemsPerPage);
+                    if (zis.lastNumberOfItemsPerPage !== curNbItemsPerPage) {
+                        zis.reforge(zis.lastNumberOfItemsPerPage, curNbItemsPerPage);
                     }
-                    this.lastNumberOfItemsPerPage = curNbItemsPerPage;
+                    zis.lastNumberOfItemsPerPage = curNbItemsPerPage;
                     zis.alignByFirstItem();
                 });
             },
@@ -317,7 +368,29 @@
                 return this.conf.nbItemsPerPage();
             },
             initialPaint: function () {
+
+                var zis = this;
                 var nbElsPerPage = this.nbItemsPerPage();
+
+
+                // static input trick
+                if (null !== this.conf.itemsDetect) {
+                    // we collect all items, however,
+                    // we just keep the main items visible (so that the user doesn't wait for them to be painted again),
+                    // and will let the slider rebuild the others slices (prev, next, and extras)
+                    this.jSliderContent.find('.' + zis.conf.css.item).each(function (i) {
+                        zis.conf.items.push(zis.conf.itemsDetect($(this)));
+                        if (i >= nbElsPerPage) {
+                            $(this).remove();
+                        }
+                        else {
+                            $(this).addClass(zis.conf.css.main);
+                            $(this).attr("data-id", i);
+                        }
+                    });
+                }
+
+
                 var the_offset = 0; // start
                 var length = this.getItemsLength();
                 var i;
@@ -325,9 +398,14 @@
 
                 if (true === this.conf.infinite) {
 
-                    // paint first items
-                    for (i = the_offset; i < nbElsPerPage; i++) {
-                        this.paintItem(mod(i, length), this.conf.css.main);
+                    // paint first items (unless they were already drawn statically)
+                    if (null === this.conf.itemsDetect) {
+                        for (i = the_offset; i < nbElsPerPage; i++) {
+                            this.paintItem(mod(i, length), this.conf.css.main);
+                        }
+                    }
+                    else {
+                        i = nbElsPerPage;
                     }
 
                     // paint extra item
@@ -352,11 +430,16 @@
                 else {
                     var c = 0;
                     // paint first items
-                    for (i = the_offset; i < nbElsPerPage; i++) {
-                        if (c < length) {
-                            this.paintItem(i, this.conf.css.main);
+                    if (null === this.conf.itemsDetect) {
+                        for (i = the_offset; i < nbElsPerPage; i++) {
+                            if (c < length) {
+                                this.paintItem(i, this.conf.css.main);
+                            }
+                            c++;
                         }
-                        c++;
+                    }
+                    else {
+                        c = nbElsPerPage;
                     }
 
                     if (c < length) {
@@ -414,8 +497,15 @@
                 this.offset += this.getPageWidth();
                 this.repositionSlider(this.offset);
             },
-            cutRight: function () {
-                this.jSliderContent.find('> .' + this.conf.css.next).remove();
+            cutRight: function (max) {
+                if (null === max) {
+                    this.jSliderContent.find('> .' + this.conf.css.next).remove();
+                }
+                else {
+                    for (var i = 0; i < max; i++) {
+                        this.jSliderContent.find('> .' + this.conf.css.next).last().remove();
+                    }
+                }
             },
             hasPrevious: function () {
                 return (this.jSliderContent.find('> .' + this.conf.css.prev).length > 0);
@@ -451,7 +541,11 @@
                  * @conception: first item looses leftmost position
                  * added the not(invisible)
                  */
-                return this.jSliderContent.find('> .' + this.conf.css.main).not('.' + this.conf.css.invisible).first();
+                return this.jSliderContent.find('> .' + this.conf.css.main).first();
+                //return this.jSliderContent.find('> .' + this.conf.css.main).not('.' + this.conf.css.invisible).first();
+            },
+            getFirstVisibleZeroItemIndex: function () {
+                return this.jSliderContent.find('> .' + this.conf.css.item + '[data-id=0]').not('.' + this.conf.css.invisible).index();
             },
             getLastMainItem: function () {
                 return this.jSliderContent.find('> .' + this.conf.css.main).last();
@@ -535,8 +629,11 @@
                     }
                 }
             },
-
-
+            paintPrevSliceFiniteFix: function (nbItemsToAdd) {
+                for (var i = nbItemsToAdd; i > 0; i--) {
+                    this.paintItem(0, this.conf.css.prev + " " + this.conf.css.invisible, false);
+                }
+            },
             /**
              * With responsive design, your nb of items per page can change.
              * For instance, you can have a 25% width item for 800px+ page width,

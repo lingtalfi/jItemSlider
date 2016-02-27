@@ -225,6 +225,8 @@ first item looses leftmost position
 
 Reproduce:
 
+
+- be in finite mode
 - be in responsive context and have 4 items per page (ipp) and 3 ipp choices.
 - have 10 items 
 - start with 4 ipp and move right
@@ -233,7 +235,7 @@ Reproduce:
 - move left
 
 ```
---> the first item should be in position 3 instead of desired position 1.
+--> the first item is in position 3 instead of desired position 1.
 --> the problem is that there is a gap between the slider mask's left boundary and the first item:
         a blank that we don't like.
 ```        
@@ -241,10 +243,134 @@ Reproduce:
 This is not a problem in infinite mode because there is always more item to fill up the left gap to the left of item 1.
 
 
-Implemented solution:
+Observation:
+we can also reproduce the same problem by doing the following sequence (which is faster ro reproduce):
 
-after an alignByFirstItem call (align), if the first item is visible, the slider should slide so that the first item 
-is in position 1, or it could be done via offset fixing (left property of the slider mask).
+- 3ipp move right
+- 4ipp 
+- move left
+
+
+I noticed that in both cases, we end up in a state where the blank space is actually some items with classes main and invisible,
+and data-id=0
+
+
+We need more details before taking a decision, but my global wish is to make the slide smoothly slide 
+the right distance rather than fixing the distance in an abrupt motion afterward.
+ 
+So in the second scenario, we do 3ipp move right, and then switch to 4ipp, at which point the state 
+of the slider looks like this (i stands for invisible, and triple pluses indicates a pemen separator,
+numbers are data-id):
+
+
+0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 8 9  
+
+In the current state of things (which are buggy), the last left move gives us the following slide state:
+
+0i 0i 0i 0i +++ 0i +++ 0i 0 1 2 +++ 3 +++ 4 5 6 7
+ 
+The part of interest is the main part, which is 
+ 
+0i 0 1 2
+
+We can observe that we end in that state where the first item is invisible, and the first main item (0)
+is therefore at the second position: there is a blank before it, and we don't want that.
+
+What we want instead is that the first item is at the first position of the main section.
+So here is what we want:
+
+0i 0i 0i 0i +++ 0i +++ 0 1 2 3 +++ 4 +++ 5 6 7 8
+
+ 
+ 
+ Let's examine the left move:
+ 
+     paintPrevSlice
+        (basically add 4 items of type 0i to the left)
+     repositionSlider
+     cutRight 
+        remove the next items in the end 
+     renameItems
+        restabilize to a consistent pemen state
+     moveSlider
+        slide a distance of pageWidth()
+     
+Let's debug pause our state again, to enable visual cues:
+ 
+initial state:     
+0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 8 9
+
+paintPrevSlice
+0i 0i 0i 0i 0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 8 9
+ 
+cutRight
+0i 0i 0i 0i 0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 
+ 
+rename
+0i 0i 0i 0i +++ 0i +++ 0i 0 1 2 +++ 3 +++ 4 5 6 7  
+
+
+Now let's replay it again, but imagining paths to the desired final state (brainstorm mode).
+
+initial state:     
+0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 8 9
+
+
+The first main is 3.
+If we slide to the left, we push 4 items to the right and the main item at position 1 would be 
+the current last 0i.
+We know that we have 4 prev items and 1 extra (pemen structure), so we can establish:
+ 
+if finite 
+    if firstMain.id != 0
+        if (item 0).index (which is 2 in this case) > 1
+            then our left move will end with a first main NOT in the first position.
+            
+We can fix it with this:
+    
+nbItemsToAddToTheLeft = nbItemsPerPage + 1 - (item 0).index                
+
+Let's see now if it would work.
+
+nbItemsToAddToTheLeft = 4 + 1 - 2 = 3
+
+
+paintPrevSlice (using 3)
+0i 0i 0i 0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++ 8 9
+
+
+cutRight
+0i 0i 0i 0i 0i 0 1  +++ 2 +++ 3 4 5 6 +++ 7 +++  
+
+rename
+0i 0i 0i 0i +++ 0i +++ 0 1 2 3 +++ 4 +++ 5 6 7   
+
+
+Well, almost, we just need to append the last 8 to get:
+0i 0i 0i 0i +++ 0i +++ 0 1 2 3 +++ 4 +++ 5 6 7 8
+
+
+In code we could raise a flag if the first main NOT in the first position situation would occur,
+and then the cutRight method would react to this flag, and instead of removing all .next items,
+it would only remove the necessary items.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
