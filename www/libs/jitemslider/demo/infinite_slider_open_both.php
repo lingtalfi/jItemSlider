@@ -6,7 +6,7 @@
     <script src="/libs/jitemslider/js/jitemslider.js"></script>
 
 
-    <title>itemSlider: infinite with right opening side</title>
+    <title>itemSlider: infinite with both opening side</title>
     <style>
 
         body {

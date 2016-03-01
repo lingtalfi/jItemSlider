@@ -162,8 +162,7 @@
             this.sliderOffset = 0;
             this.itemToCopyIndex = 0;
             this.firstItemNotAligned = false;
-            this.conf = $.extend(defaults, options);
-
+            this.conf = $.extend(true, {}, defaults, options);
             if (!this.conf.slider instanceof jQuery) {
                 devError("slider must be an instance of jQuery");
             }
@@ -171,7 +170,6 @@
             this.jSliderContent = this.jSlider.find('.' + this.conf.css.sliderContent);
             this.isLocked = false;
             this.lastNumberOfItemsPerPage = this.nbItemsPerPage();
-
 
             if (0 === this.jSliderContent.length) {
                 devError("slider content not found");
@@ -539,10 +537,8 @@
             getFirstMainItem: function () {
                 /**
                  * @conception: first item looses leftmost position
-                 * added the not(invisible)
                  */
                 return this.jSliderContent.find('> .' + this.conf.css.main).first();
-                //return this.jSliderContent.find('> .' + this.conf.css.main).not('.' + this.conf.css.invisible).first();
             },
             getFirstVisibleZeroItemIndex: function () {
                 return this.jSliderContent.find('> .' + this.conf.css.item + '[data-id=0]').not('.' + this.conf.css.invisible).index();

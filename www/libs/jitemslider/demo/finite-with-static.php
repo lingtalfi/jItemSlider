@@ -28,7 +28,7 @@ $cats = [
     <script src="/libs/jitemslider/js/jitemslider.js"></script>
 
 
-    <title>itemSlider: infinite with right opening side</title>
+    <title>itemSlider: finite with already existing items</title>
     <style>
 
         body {
@@ -151,7 +151,6 @@ $cats = [
         $(document).ready(function () {
 
 
-            var jParentSlider = $('.slider');
             var jSlider = $('.slider_mask');
             var jPrev = $('.handle.prev');
             var jNext = $('.handle.next');
@@ -169,9 +168,20 @@ $cats = [
                 animationLockTime: 2000,
                 openingSide: "right",
                 onLeftSlideAfter: function (bv) {
+                    if (1 === bv || 3 === bv) {
+                        jPrev.removeClass('active');
+                    }
+                    if (bv < 2) {
+                        jNext.addClass('active');
+                    }
                 },
                 onRightSlideAfter: function (bv) {
-                    jParentSlider.addClass('active');
+                    if (0 === bv || 2 === bv) {
+                        jPrev.addClass('active');
+                        if (2 === bv) {
+                            jNext.removeClass('active');
+                        }
+                    }
                 },
                 renderItemCb: function (data) {
                     return '<div class="item"><div class="artwork" style="background-image: url(' + data.url + ')"></div></div>';
@@ -183,6 +193,13 @@ $cats = [
                     return 4;
                 }
             });
+
+
+            var bv = oSlider.getBoundaryValue();
+            // if this is not the last page, display the right handle
+            if (bv < 2) {
+                jNext.addClass('active');
+            }
 
 
             jPrev.on('click', function () {

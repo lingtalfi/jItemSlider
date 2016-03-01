@@ -301,7 +301,7 @@ $cats = [
     <script src="/libs/jitemslider/js/jitemslider.js"></script>
 
 
-    <title>itemSlider: infinite with right opening side</title>
+    <title>itemSlider: finite with already existing items</title>
     <style>
 
         body {
@@ -458,6 +458,13 @@ $cats = [
             });
 
 
+            var bv = oSlider.getBoundaryValue();
+            // if this is not the last page, display the right handle
+            if (bv < 2) {
+                jNext.addClass('active');
+            }
+            
+            
             jPrev.on('click', function () {
                 oSlider.moveLeft();
                 return false;
