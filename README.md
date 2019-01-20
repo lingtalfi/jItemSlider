@@ -22,7 +22,7 @@ uni import jItemSlider
 ```
 
 
-See the animated gif demo here: http://s19.postimg.org/ittzbflcx/jitemslider.gif
+![JItem Slider Demo](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)
 
 
 
