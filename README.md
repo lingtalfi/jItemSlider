@@ -22,8 +22,9 @@ uni import jItemSlider
 ```
 
 
+See the animated gif demo here: http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif
 
-[![jitem slider](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)
+
 
 
 
