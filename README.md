@@ -22,9 +22,8 @@ uni import jItemSlider
 ```
 
 
-![JItem Slider Demo](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)
 
-
+[![jitem slider](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)](http://lingtalfi.com/img/universe/JItemSlider/jitemslider.gif)
 
 
 
